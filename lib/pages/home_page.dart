@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../consts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -24,19 +25,32 @@ class _HomePageState extends State<HomePage> {
   String? _placeName;
 
   StreamSubscription<Position>? _posSub;
+
   bool _fetchingWeather = false;
   bool _fetchingPlace = false;
+
+  Timer? _clockTimer;
+  Timer? _weatherTimer;
+
+  DateTime _now = DateTime.now();
 
   @override
   void initState() {
     super.initState();
     _wf = WeatherFactory(openWeatherApiKey);
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() => _now = DateTime.now());
+    });
+
     _startLocationTracking();
   }
 
   @override
   void dispose() {
     _posSub?.cancel();
+    _clockTimer?.cancel();
+    _weatherTimer?.cancel();
     super.dispose();
   }
 
@@ -54,33 +68,41 @@ class _HomePageState extends State<HomePage> {
     }
 
     final current = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
+      desiredAccuracy: LocationAccuracy.bestForNavigation,
     );
 
-    _lat = current.latitude;
-    _lon = current.longitude;
+    _updateLatLon(current.latitude, current.longitude);
 
     await Future.wait([
-      _fetchWeather(_lat!, _lon!),
       _fetchPlaceName(_lat!, _lon!),
+      _fetchWeather(_lat!, _lon!),
     ]);
 
     const settings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 200,
+      accuracy: LocationAccuracy.bestForNavigation,
+      distanceFilter: 5, // giảm để update thường xuyên hơn
     );
 
-    _posSub = Geolocator.getPositionStream(locationSettings: settings).listen(
-          (pos) async {
-        _lat = pos.latitude;
-        _lon = pos.longitude;
+    _posSub =
+        Geolocator.getPositionStream(locationSettings: settings).listen((pos) {
+          _updateLatLon(pos.latitude, pos.longitude);
+          _fetchPlaceName(_lat!, _lon!);
+        });
+    _weatherTimer?.cancel();
+    _weatherTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+      final lat = _lat;
+      final lon = _lon;
+      if (lat == null || lon == null) return;
+      await _fetchWeather(lat, lon);
+    });
+  }
 
-        await Future.wait([
-          _fetchWeather(_lat!, _lon!),
-          _fetchPlaceName(_lat!, _lon!),
-        ]);
-      },
-    );
+  void _updateLatLon(double lat, double lon) {
+    if (!mounted) return;
+    setState(() {
+      _lat = lat;
+      _lon = lon;
+    });
   }
 
   Future<void> _fetchWeather(double lat, double lon) async {
@@ -113,6 +135,7 @@ class _HomePageState extends State<HomePage> {
         ]);
       }
 
+      if (!mounted) return;
       setState(() => _placeName = name);
     } catch (_) {
       // giữ nguyên _placeName nếu geocoding fail
@@ -131,12 +154,32 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: _buildUI());
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF2238E8),
+              Color(0xFF14A7FD),
+            ],
+          ),
+        ),
+        child: SafeArea(child: _buildUI()),
+      ),
+    );
   }
 
   Widget _buildUI() {
     if (_weather == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        ),
+      );
     }
 
     return SizedBox(
@@ -166,6 +209,7 @@ class _HomePageState extends State<HomePage> {
       style: const TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w500,
+        color: Colors.white,
       ),
     );
   }
@@ -181,20 +225,23 @@ class _HomePageState extends State<HomePage> {
       style: const TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w400,
-        color: Colors.black54,
+        color: Colors.white70,
       ),
     );
   }
-
   Widget _dateTimeInfo() {
-    final DateTime now = _weather?.date ?? DateTime.now();
+    final DateTime now = _now;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          DateFormat("h:mm a").format(now),
-          style: const TextStyle(fontSize: 35),
+          DateFormat("h:mm:ss a").format(now),
+          style: const TextStyle(
+            fontSize: 35,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 10),
         Row(
@@ -202,12 +249,18 @@ class _HomePageState extends State<HomePage> {
           children: [
             Text(
               DateFormat("EEEE").format(now),
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(width: 8),
             Text(
               DateFormat("d.M.y").format(now),
-              style: const TextStyle(fontWeight: FontWeight.w400),
+              style: const TextStyle(
+                fontWeight: FontWeight.w400,
+                color: Colors.white70,
+              ),
             ),
           ],
         ),
@@ -222,7 +275,7 @@ class _HomePageState extends State<HomePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.purple.shade200,
+        color: const Color(0xFF0B4AA6),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -233,12 +286,19 @@ class _HomePageState extends State<HomePage> {
             children: [
               const Text(
                 "Temperature: ",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
               Text(
                 temp == null ? "--°C" : "${temp.toStringAsFixed(0)}°C",
-                style:
-                const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
@@ -248,15 +308,23 @@ class _HomePageState extends State<HomePage> {
             children: [
               const Text(
                 "Humidity: ",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
               Text(
                 hum == null ? "--%" : "${hum.toStringAsFixed(0)}%",
-                style:
-                const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );
