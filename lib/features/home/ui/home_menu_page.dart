@@ -1,13 +1,14 @@
+// lib/features/home/ui/home_menu_page.dart
 import 'package:flutter/material.dart';
 import '../state/home_state.dart';
 import '../service/home_formatter.dart';
+import '../../ai_advisor/ui/ai_advisor_page.dart';
 import '../../humidity/ui/humidity_page.dart';
 import '../../temperature/ui/temperature_page.dart';
 import '../../weather_detail/ui/weather_detail_page.dart';
 import '../../weather_description/ui/weather_description_page.dart';
 import '../../settings/ui/settings_page.dart';
 import '../../privacy/ui/privacy_page.dart';
-
 class HomeMenuPage extends StatelessWidget {
   final HomeState state;
   HomeMenuPage({super.key, required this.state});
@@ -65,6 +66,18 @@ class HomeMenuPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 18),
+                    _menuItem(
+                      context,
+                      title: "AI advisor",
+                      iconBg: const Color(0xFFE6DDFF),
+                      icon: Icons.smart_toy,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => AiAdvisorPage(home: state)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
                     _menuItem(
                       context,
                       title: "Humidity Meter",
