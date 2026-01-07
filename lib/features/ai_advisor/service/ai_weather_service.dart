@@ -48,7 +48,7 @@ SCOPE:
 
   static const String _outputFormat = """
 ĐẦU RA (không thêm gì khác):
-1) TÓM TẮT: 1-2 câu.
+1) TÓM TẮT: 1-2 câu, mô tả chi tiết thời tiết.
 2) KHUYẾN NGHỊ: 3-6 gạch đầu dòng, hành động cụ thể.
 """;
 
