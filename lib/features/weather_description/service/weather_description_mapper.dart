@@ -1,53 +1,67 @@
-import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 import '../../../core/models/weather_snapshot.dart';
 import '../model/weather_description_view_data.dart';
 
 class WeatherDescriptionMapper {
-  static const double _msToMph = 2.2369362920544;
+  WeatherDescriptionViewData toViewData(WeatherSnapshot? s, {required bool isCelsius}) {
+    if (s == null) {
+      return const WeatherDescriptionViewData(
+        locationText: "—",
+        tempText: "—",
+        feelsLikeText: "Feels like —",
+        descriptionText: "—",
+        updatedText: "Updated: —",
+        windSpeedText: "—",
+        sunriseText: "—",
+        sunsetText: "—",
+        sunriseAt: null,
+        sunsetAt: null,
+        icon: null,
+      );
+    }
 
-  String _fmtTime(DateTime? dt) {
-    if (dt == null) return "—";
-    return DateFormat("HH:mm").format(dt);
-  }
+    final tempC = s.tempC;
+    final feelsC = s.feelsLikeC;
+    final temp = tempC == null ? null : (isCelsius ? tempC : (tempC * 9 / 5) + 32);
+    final feels = feelsC == null ? null : (isCelsius ? feelsC : (feelsC * 9 / 5) + 32);
 
-  String _fmtUpdated(DateTime dt) {
-    return DateFormat("dd/MM/yyyy HH:mm").format(dt);
-  }
-
-  String _fmtTemp(double? c, bool isCelsius) {
-    if (c == null) return "—";
-    if (isCelsius) return c.toStringAsFixed(1);
-    final f = (c * 9 / 5) + 32;
-    return f.toStringAsFixed(1);
-  }
-
-  WeatherDescriptionViewData toViewData(
-      WeatherSnapshot? s, {
-        required bool isCelsius,
-      }) {
-    final loc = [
-      s?.areaName,
-      s?.country,
-    ].where((e) => (e ?? "").trim().isNotEmpty).join(", ");
     final unit = isCelsius ? "°C" : "°F";
 
-    final temp = "${_fmtTemp(s?.tempC, isCelsius)}$unit";
-    final feels = "Feels like ${_fmtTemp(s?.feelsLikeC, isCelsius)}$unit";
-
-    final windMs = s?.windSpeedMs;
-    final windMph = windMs == null ? null : windMs * _msToMph;
-    final windText = windMph == null ? "—" : "${windMph.toStringAsFixed(1)} mph";
-
     return WeatherDescriptionViewData(
-      locationText: loc.isEmpty ? "—" : loc,
-      tempText: temp,
-      feelsLikeText: feels,
-      descriptionText: (s?.description ?? "—"),
-      updatedText: s == null ? "Updated: —" : "Updated: ${_fmtUpdated(s.fetchedAt)}",
-      windSpeedText: windText,
-      sunriseText: _fmtTime(s?.sunrise),
-      sunsetText: _fmtTime(s?.sunset),
-      icon: s?.icon,
+      locationText: [
+        if ((s.areaName ?? "").trim().isNotEmpty) s.areaName!.trim(),
+        if ((s.country ?? "").trim().isNotEmpty) s.country!.trim(),
+      ].join(", ").isEmpty
+          ? "—"
+          : [
+        if ((s.areaName ?? "").trim().isNotEmpty) s.areaName!.trim(),
+        if ((s.country ?? "").trim().isNotEmpty) s.country!.trim(),
+      ].join(", "),
+      tempText: temp == null ? "—" : "${temp.toStringAsFixed(1)}$unit",
+      feelsLikeText: feels == null ? "Feels like —" : "Feels like ${feels.toStringAsFixed(1)}$unit",
+      descriptionText: (s.description ?? "—").trim().isEmpty ? "—" : s.description!.trim(),
+      updatedText: s.fetchedAt == null ? "Updated: —" : "Updated: ${_fmtTime(s.fetchedAt!)}",
+      windSpeedText: s.windSpeedMs == null ? "—" : "${s.windSpeedMs!.toStringAsFixed(1)} m/s",
+      sunriseText: s.sunrise == null ? "—" : _fmtTime(s.sunrise!),
+      sunsetText: s.sunset == null ? "—" : _fmtTime(s.sunset!),
+      sunriseAt: s.sunrise,
+      sunsetAt: s.sunset,
+      icon: _iconFromDescription(s.description),
     );
+  }
+
+  String _fmtTime(DateTime d) {
+    final hh = d.hour.toString().padLeft(2, '0');
+    final mm = d.minute.toString().padLeft(2, '0');
+    return "$hh:$mm";
+  }
+
+  IconData? _iconFromDescription(String? desc) {
+    final t = (desc ?? "").toLowerCase();
+    if (t.contains("rain")) return Icons.water_drop;
+    if (t.contains("cloud")) return Icons.cloud;
+    if (t.contains("clear")) return Icons.wb_sunny;
+    if (t.contains("thunder")) return Icons.flash_on;
+    return Icons.cloud;
   }
 }

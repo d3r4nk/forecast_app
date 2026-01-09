@@ -36,10 +36,15 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([_state, widget.settings]),
+      animation: Listenable.merge([_state, widget.settings, widget.home]),
       builder: (context, _) {
         final v = _state.view;
         final strings = AppStrings(widget.settings.isEnglish);
+
+        final snap = widget.home.snapshot;
+        final sunriseDt = snap?.sunrise;
+        final sunsetDt = snap?.sunset;
+        final now = widget.home.now;
 
         return Scaffold(
           body: Container(
@@ -139,6 +144,9 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
                             _sunCard(
                               sunrise: v.sunriseText,
                               sunset: v.sunsetText,
+                              sunriseDt: sunriseDt,
+                              sunsetDt: sunsetDt,
+                              now: now,
                             ),
                             const SizedBox(height: 16),
                           ],
@@ -254,7 +262,7 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
           const Icon(Icons.air, color: Colors.white, size: 28),
           const SizedBox(height: 10),
           Text(
-            "${strings} $windText",
+            "$strings $windText",
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,
@@ -266,7 +274,29 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
     );
   }
 
-  Widget _sunCard({required String sunrise, required String sunset}) {
+  double? _sunProgress({required DateTime now, DateTime? sunrise, DateTime? sunset}) {
+    if (sunrise == null || sunset == null) return null;
+    final total = sunset.difference(sunrise);
+    if (total.inSeconds <= 0) return null;
+
+    if (now.isBefore(sunrise)) return 0.0;
+    if (now.isAfter(sunset)) return 1.0;
+
+    final passed = now.difference(sunrise);
+    final p = passed.inSeconds / total.inSeconds;
+    if (p.isNaN || p.isInfinite) return null;
+    return p.clamp(0.0, 1.0);
+  }
+
+  Widget _sunCard({
+    required String sunrise,
+    required String sunset,
+    required DateTime? sunriseDt,
+    required DateTime? sunsetDt,
+    required DateTime now,
+  }) {
+    final progress = _sunProgress(now: now, sunrise: sunriseDt, sunset: sunsetDt);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
@@ -280,7 +310,7 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
           SizedBox(
             height: 150,
             child: CustomPaint(
-              painter: _SunArcPainter(),
+              painter: _SunArcPainter(progress: progress),
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
@@ -302,13 +332,19 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
                           ),
                         ],
                       ),
-                      Text(
-                        sunset,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            sunset,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Icon(Icons.nights_stay, color: Colors.white, size: 16),
+                        ],
                       ),
                     ],
                   ),
@@ -320,6 +356,7 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
       ),
     );
   }
+
   LinearGradient _buildGradient(double intensity) {
     return LinearGradient(
       begin: Alignment.topCenter,
@@ -333,9 +370,13 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
 }
 
 class _SunArcPainter extends CustomPainter {
+  final double? progress;
+
+  _SunArcPainter({required this.progress});
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    final arcPaint = Paint()
       ..color = Colors.white.withOpacity(0.9)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
@@ -350,7 +391,6 @@ class _SunArcPainter extends CustomPainter {
         math.pi,
       );
 
-    // dashed arc
     final metrics = path.computeMetrics().toList();
     if (metrics.isEmpty) return;
 
@@ -362,11 +402,32 @@ class _SunArcPainter extends CustomPainter {
     while (dist < metric.length) {
       final len = math.min(dash, metric.length - dist);
       final extract = metric.extractPath(dist, dist + len);
-      canvas.drawPath(extract, paint);
+      canvas.drawPath(extract, arcPaint);
       dist += dash + gap;
     }
+
+    final p = progress;
+    if (p == null) return;
+
+    final angle = math.pi + (math.pi * p);
+    final sunCenter = Offset(
+      center.dx + radius * math.cos(angle),
+      center.dy + radius * math.sin(angle),
+    );
+
+    final glow = Paint()
+      ..color = Colors.white.withOpacity(0.25)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(sunCenter, 10, glow);
+
+    final sunPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(sunCenter, 6, sunPaint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SunArcPainter oldDelegate) {
+    return oldDelegate.progress != progress;
+  }
 }

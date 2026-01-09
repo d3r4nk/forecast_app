@@ -1,10 +1,18 @@
+// lib/features/ai_advisor/ui/ai_advisor_page.dart
 import 'package:flutter/material.dart';
+import 'package:forecast_app/features/settings/state/settings_state.dart';
 import '../../home/state/home_state.dart';
 import '../state/ai_advisor_state.dart';
 
 class AiAdvisorPage extends StatefulWidget {
   final HomeState home;
-  const AiAdvisorPage({super.key, required this.home});
+  final SettingsState settings;
+
+  const AiAdvisorPage({
+    super.key,
+    required this.home,
+    required this.settings,
+  });
 
   @override
   State<AiAdvisorPage> createState() => _AiAdvisorPageState();
@@ -16,7 +24,10 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
   @override
   void initState() {
     super.initState();
-    _state = AiAdvisorState(home: widget.home);
+    _state = AiAdvisorState(
+      home: widget.home,
+      settings: widget.settings,
+    );
   }
 
   @override
@@ -28,20 +39,24 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _state,
+      animation: Listenable.merge([_state, widget.settings]),
       builder: (context, _) {
         final v = _state.view;
+
+        final isEn = widget.settings.isEnglish;
+        final title = isEn ? "AI advisor" : "Cố vấn AI";
+        final btnText = isEn ? "Generate advice" : "Tạo lời khuyên";
+        final btnLoading = isEn ? "Generating..." : "Đang tạo...";
+        final emptyHint = isEn
+            ? "Press Generate advice to get analysis."
+            : "Nhấn Tạo lời khuyên để nhận phân tích.";
 
         return Scaffold(
           body: Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF0B4AA6), Color(0xFF0F66D0)],
-              ),
+            decoration: BoxDecoration(
+              gradient: _buildGradient(widget.settings.themeIntensity),
             ),
             child: SafeArea(
               child: Padding(
@@ -51,13 +66,14 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
                     Row(
                       children: [
                         _iconButton(
-                          icon: Icons.arrow_back,
+                          icon: Icons.arrow_back_ios,
                           onTap: () => Navigator.pop(context),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            v.title,
+                            title,
+                            textAlign: TextAlign.left,
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w800,
@@ -68,7 +84,7 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
                         const SizedBox(width: 10),
                         _iconButton(
                           icon: Icons.refresh,
-                          onTap: () => _state.generateAdvice(),
+                          onTap: _state.loading ? null : _state.generateAdvice,
                         ),
                       ],
                     ),
@@ -79,21 +95,21 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
                     ),
                     const SizedBox(height: 12),
                     Expanded(
-                      child: _adviceCard(),
+                      child: _adviceCard(emptyHint: emptyHint),
                     ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
                           child: _primaryButton(
-                            label: _state.loading ? "Getting advice for you..." : "get advice",
-                            onTap: _state.loading ? null : () => _state.generateAdvice(),
+                            label: _state.loading ? btnLoading : btnText,
+                            onTap: _state.loading ? null : _state.generateAdvice,
                           ),
                         ),
                         const SizedBox(width: 10),
                         _secondaryButton(
                           icon: Icons.delete_outline,
-                          onTap: _state.loading ? null : () => _state.clear(),
+                          onTap: _state.loading ? null : _state.clear,
                         ),
                       ],
                     ),
@@ -143,7 +159,7 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
     );
   }
 
-  Widget _adviceCard() {
+  Widget _adviceCard({required String emptyHint}) {
     final text = _state.view.adviceText;
     final err = _state.error;
 
@@ -169,10 +185,10 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
         ),
       )
           : (text.isEmpty)
-          ? const Center(
+          ? Center(
         child: Text(
-          "Nhấn get advice để nhận phân tích.",
-          style: TextStyle(
+          emptyHint,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
           ),
@@ -247,6 +263,17 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
         ),
         child: Icon(icon, color: Colors.white),
       ),
+    );
+  }
+
+  LinearGradient _buildGradient(double intensity) {
+    return LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Color.lerp(const Color(0xFF0B4AA6), Colors.white, 1 - intensity)!,
+        Color.lerp(const Color(0xFF0F66D0), Colors.white, 1 - intensity)!,
+      ],
     );
   }
 }
