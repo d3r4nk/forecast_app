@@ -37,6 +37,11 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+  flutter_dotenv: any
+  weather: any
+  intl: any
+  geolocator: any
+  geocoding: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -52,6 +57,10 @@ dev_dependencies:
   geolocator: ^14.0.2
   geocoding: ^4.0.0
   flutter_dotenv:
+  openai_dart: ^0.6.2
+  home_widget:
+  provider:
+  path_provider:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

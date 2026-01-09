@@ -9,7 +9,7 @@ class WeatherSnapshot {
 
   final String? description;
   final String? icon;
-
+  final String? iconCode;
   final String? areaName;
   final String? country;
 
@@ -32,5 +32,6 @@ class WeatherSnapshot {
     this.country,
     this.sunrise,
     this.sunset,
+    this.iconCode
   });
 }

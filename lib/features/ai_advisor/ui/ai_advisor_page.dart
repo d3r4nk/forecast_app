@@ -86,7 +86,7 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
                       children: [
                         Expanded(
                           child: _primaryButton(
-                            label: _state.loading ? "Generating..." : "Generate advice",
+                            label: _state.loading ? "Getting advice for you..." : "get advice",
                             onTap: _state.loading ? null : () => _state.generateAdvice(),
                           ),
                         ),
@@ -171,7 +171,7 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
           : (text.isEmpty)
           ? const Center(
         child: Text(
-          "Nhấn Generate advice để nhận phân tích.",
+          "Nhấn get advice để nhận phân tích.",
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,

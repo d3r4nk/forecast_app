@@ -1,8 +1,10 @@
+// lib/features/home/ui/home_menu_page.dart
 import 'package:flutter/material.dart';
 import 'package:forecast_app/core/app_strings.dart';
 import 'package:forecast_app/features/settings/state/settings_state.dart';
 import '../state/home_state.dart';
 import '../service/home_formatter.dart';
+import '../../ai_advisor/ui/ai_advisor_page.dart';
 import '../../humidity/ui/humidity_page.dart';
 import '../../temperature/ui/temperature_page.dart';
 import '../../weather_detail/ui/weather_detail_page.dart';
