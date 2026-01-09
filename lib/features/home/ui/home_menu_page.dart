@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:forecast_app/core/app_strings.dart';
+import 'package:forecast_app/features/settings/state/settings_state.dart';
 import '../state/home_state.dart';
 import '../service/home_formatter.dart';
 import '../../humidity/ui/humidity_page.dart';
@@ -6,18 +8,23 @@ import '../../temperature/ui/temperature_page.dart';
 import '../../weather_detail/ui/weather_detail_page.dart';
 import '../../weather_description/ui/weather_description_page.dart';
 import '../../settings/ui/settings_page.dart';
-import '../../privacy/ui/privacy_page.dart';
 
 class HomeMenuPage extends StatelessWidget {
   final HomeState state;
-  HomeMenuPage({super.key, required this.state});
+  final SettingsState settings;
+  HomeMenuPage({
+    super.key,
+    required this.state,
+    required this.settings,
+  });
 
   final HomeFormatter _fmt = HomeFormatter();
 
   @override
   Widget build(BuildContext context) {
+    final strings = AppStrings(settings.isEnglish);
     return AnimatedBuilder(
-      animation: state,
+      animation: Listenable.merge([state, settings]),
       builder: (context, _) {
         final header = _fmt.buildHeader(lat: state.lat, lon: state.lon, now: state.now);
 
@@ -25,12 +32,8 @@ class HomeMenuPage extends StatelessWidget {
           body: Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF0B4AA6), Color(0xFF0F66D0)],
-              ),
+            decoration: BoxDecoration(
+              gradient: _buildGradient(settings.themeIntensity),
             ),
             child: SafeArea(
               child: Padding(
@@ -67,73 +70,62 @@ class HomeMenuPage extends StatelessWidget {
                     const SizedBox(height: 18),
                     _menuItem(
                       context,
-                      title: "Humidity Meter",
+                      title: strings.humidity,
                       iconBg: const Color(0xFFD7F1FF),
                       icon: Icons.water_drop,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => HumidityPage(home: state)),
+                        MaterialPageRoute(builder: (_) => HumidityPage(home: state, settings: settings)),
                       ),
                     ),
                     const SizedBox(height: 12),
                     _menuItem(
                       context,
-                      title: "Weather Detail",
+                      title: strings.weatherDetail,
                       iconBg: const Color(0xFFFFF0BF),
                       icon: Icons.wb_sunny,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => WeatherDetailPage(home: state)),
+                        MaterialPageRoute(builder: (_) => WeatherDetailPage(home: state, settings: settings)),
                       ),
                     ),
                     const SizedBox(height: 12),
                     _menuItem(
                       context,
-                      title: "Temperature",
+                      title: strings.temperature,
                       iconBg: const Color(0xFFFFD6D6),
                       icon: Icons.thermostat,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => TemperaturePage(home: state)),
+                        MaterialPageRoute(builder: (_) => TemperaturePage(home: state, settings: settings)),
                       ),
                     ),
                     const SizedBox(height: 12),
                     _menuItem(
                       context,
-                      title: "Weather Description",
+                      title: strings.weatherDescription,
                       iconBg: const Color(0xFFE6DDFF),
                       icon: Icons.cloud,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => WeatherDescriptionPage(home: state)),
+                        MaterialPageRoute(builder: (_) => WeatherDescriptionPage(home: state, settings: settings)),
                       ),
                     ),
                     const SizedBox(height: 12),
                     _menuItem(
                       context,
-                      title: "Settings",
+                      title: strings.settings,
                       iconBg: const Color(0xFFE6DDFF),
                       icon: Icons.settings,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const SettingsPage()),
+                        MaterialPageRoute(builder: (_) => SettingsPage(settings: settings)),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _menuItem(
-                      context,
-                      title: "Privacy Policy",
-                      iconBg: const Color(0xFFD7F1FF),
-                      icon: Icons.privacy_tip,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const PrivacyPage()),
-                      ),
-                    ),
-                    const Spacer(),
                     if (!state.locationReady)
-                      const Text(
-                        "Location permission/service not available.",
+                      Text(
+                        strings.locationPermissionDenied,
                         style: TextStyle(color: Colors.white),
                         textAlign: TextAlign.center,
                       ),
@@ -196,6 +188,16 @@ class HomeMenuPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+  LinearGradient _buildGradient(double intensity) {
+    return LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Color.lerp(const Color(0xFF0B4AA6), Colors.white, 1 - intensity)!,
+        Color.lerp(const Color(0xFF0F66D0), Colors.white, 1 - intensity)!,
+      ],
     );
   }
 }
