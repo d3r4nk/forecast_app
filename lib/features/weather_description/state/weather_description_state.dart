@@ -18,6 +18,8 @@ class WeatherDescriptionState extends ChangeNotifier {
     windSpeedText: "—",
     sunriseText: "—",
     sunsetText: "—",
+    sunriseAt: null,
+    sunsetAt: null,
     icon: null,
   );
 

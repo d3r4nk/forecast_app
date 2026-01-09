@@ -7,13 +7,14 @@ import '../service/home_formatter.dart';
 import '../../ai_advisor/ui/ai_advisor_page.dart';
 import '../../humidity/ui/humidity_page.dart';
 import '../../temperature/ui/temperature_page.dart';
-import '../../weather_detail/ui/weather_detail_page.dart';
+import '../../weather_forecast/ui/weather_forecast_page.dart';
 import '../../weather_description/ui/weather_description_page.dart';
 import '../../settings/ui/settings_page.dart';
 
 class HomeMenuPage extends StatelessWidget {
   final HomeState state;
   final SettingsState settings;
+
   HomeMenuPage({
     super.key,
     required this.state,
@@ -25,6 +26,7 @@ class HomeMenuPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final strings = AppStrings(settings.isEnglish);
+
     return AnimatedBuilder(
       animation: Listenable.merge([state, settings]),
       builder: (context, _) {
@@ -70,6 +72,21 @@ class HomeMenuPage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 18),
+
+                    _menuItem(
+                      context,
+                      title: strings.advisor,
+                      iconBg: const Color(0xFFE6DDFF),
+                      icon: Icons.psychology,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AiAdvisorPage(home: state, settings: settings),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
                     _menuItem(
                       context,
                       title: strings.humidity,
@@ -83,12 +100,12 @@ class HomeMenuPage extends StatelessWidget {
                     const SizedBox(height: 12),
                     _menuItem(
                       context,
-                      title: strings.weatherDetail,
+                      title: strings.weatherForecast,
                       iconBg: const Color(0xFFFFF0BF),
                       icon: Icons.wb_sunny,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => WeatherDetailPage(home: state, settings: settings)),
+                        MaterialPageRoute(builder: (_) => WeatherForecastPage(home: state, settings: settings)),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -128,7 +145,7 @@ class HomeMenuPage extends StatelessWidget {
                     if (!state.locationReady)
                       Text(
                         strings.locationPermissionDenied,
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                         textAlign: TextAlign.center,
                       ),
                   ],
@@ -192,6 +209,7 @@ class HomeMenuPage extends StatelessWidget {
       ),
     );
   }
+
   LinearGradient _buildGradient(double intensity) {
     return LinearGradient(
       begin: Alignment.topCenter,
