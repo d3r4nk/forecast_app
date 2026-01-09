@@ -1,11 +1,18 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:forecast_app/core/app_strings.dart';
+import 'package:forecast_app/features/settings/state/settings_state.dart';
 import '../../home/state/home_state.dart';
 import '../state/weather_description_state.dart';
 
 class WeatherDescriptionPage extends StatefulWidget {
+  final SettingsState settings;
   final HomeState home;
-  const WeatherDescriptionPage({super.key, required this.home});
+  const WeatherDescriptionPage({
+    super.key,
+    required this.home,
+    required this.settings,
+  });
 
   @override
   State<WeatherDescriptionPage> createState() => _WeatherDescriptionPageState();
@@ -29,20 +36,17 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _state,
+      animation: Listenable.merge([_state, widget.settings]),
       builder: (context, _) {
         final v = _state.view;
+        final strings = AppStrings(widget.settings.isEnglish);
 
         return Scaffold(
           body: Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF0B4AA6), Color(0xFF0F66D0)],
-              ),
+            decoration: BoxDecoration(
+              gradient: _buildGradient(widget.settings.themeIntensity),
             ),
             child: SafeArea(
               child: Padding(
@@ -126,11 +130,11 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            _sectionTitle("Wind"),
+                            _sectionTitle(strings.wind),
                             const SizedBox(height: 10),
-                            _windCard(v.windSpeedText),
+                            _windCard(v.windSpeedText, strings: strings.speed),
                             const SizedBox(height: 18),
-                            _sectionTitle("Sunrise and sunset"),
+                            _sectionTitle(strings.sunriseAndSunset),
                             const SizedBox(height: 10),
                             _sunCard(
                               sunrise: v.sunriseText,
@@ -236,7 +240,7 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
     );
   }
 
-  Widget _windCard(String windText) {
+  Widget _windCard(String windText, {required String strings}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
@@ -250,7 +254,7 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
           const Icon(Icons.air, color: Colors.white, size: 28),
           const SizedBox(height: 10),
           Text(
-            "Speed $windText",
+            "${strings} $windText",
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w800,
@@ -314,6 +318,16 @@ class _WeatherDescriptionPageState extends State<WeatherDescriptionPage> {
           ),
         ],
       ),
+    );
+  }
+  LinearGradient _buildGradient(double intensity) {
+    return LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        Color.lerp(const Color(0xFF0B4AA6), Colors.white, 1 - intensity)!,
+        Color.lerp(const Color(0xFF0F66D0), Colors.white, 1 - intensity)!,
+      ],
     );
   }
 }

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import '../features/home/state/home_state.dart';
 import '../features/home/ui/home_menu_page.dart';
+import '../features/settings/state/settings_state.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final SettingsState settings;
+  const HomePage({
+    super.key,
+    required this.settings,  
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -26,6 +31,14 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return HomeMenuPage(state: _state);
+    return AnimatedBuilder(
+      animation: widget.settings,
+      builder: (context, _) {
+        return HomeMenuPage(
+          state: _state,
+          settings: widget.settings,
+        );
+      }
+    );
   }
 }
