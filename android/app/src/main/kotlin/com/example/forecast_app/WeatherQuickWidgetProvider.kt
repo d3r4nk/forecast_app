@@ -55,4 +55,27 @@ class WeatherQuickWidgetProvider : AppWidgetProvider() {
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
+    private fun iconRes(code: String): Int {
+        return when (code) {
+            "01d" -> R.drawable.ow_01d
+            "01n" -> R.drawable.ow_01n
+            "02d" -> R.drawable.ow_02d
+            "02n" -> R.drawable.ow_02n
+            "03d" -> R.drawable.ow_03d
+            "03n" -> R.drawable.ow_03n
+            "04d" -> R.drawable.ow_04d
+            "04n" -> R.drawable.ow_04n
+            "09d" -> R.drawable.ow_09d
+            "09n" -> R.drawable.ow_09n
+            "10d" -> R.drawable.ow_10d
+            "10n" -> R.drawable.ow_10n
+            "11d" -> R.drawable.ow_11d
+            "11n" -> R.drawable.ow_11n
+            "13d" -> R.drawable.ow_13d
+            "13n" -> R.drawable.ow_13n
+            "50d" -> R.drawable.ow_50d
+            "50n" -> R.drawable.ow_50n
+            else  -> R.drawable.ow_na
+        }
+    }
 }
