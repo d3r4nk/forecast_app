@@ -27,7 +27,7 @@ class WeatherQuickWidgetProvider : AppWidgetProvider() {
         val iconCode = prefs.getString("w_icon", "na") ?: "na"
 
         val views = RemoteViews(context.packageName, R.layout.weather_quick_widget)
-        views.setTextViewText(R.id.tv_temp_big, "$temp°")
+        views.setTextViewText(R.id.tv_temp_big, "$temp")
         views.setTextViewText(
             R.id.tv_metrics,
             "Hum $hum  •  Wind $wind"
