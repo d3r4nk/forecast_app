@@ -5,17 +5,40 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.graphics.BitmapFactory
 import android.os.Build
 import android.widget.RemoteViews
-import java.io.File
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 
 class WeatherQuickWidgetProvider : AppWidgetProvider() {
 
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        scheduleWorker(context)
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+    }
+
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        scheduleWorker(context)
         for (id in appWidgetIds) updateAppWidget(context, appWidgetManager, id)
     }
 
+    private fun scheduleWorker(context: Context) {
+        val req = PeriodicWorkRequestBuilder<WeatherWidgetWorker>(15, TimeUnit.MINUTES)
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            WORK_NAME,
+            ExistingPeriodicWorkPolicy.UPDATE,
+            req
+        )
+    }
 
     private fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
         val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
@@ -24,18 +47,12 @@ class WeatherQuickWidgetProvider : AppWidgetProvider() {
         val hum  = prefs.getString("w_hum", "—") ?: "—"
         val wind = prefs.getString("w_wind", "—") ?: "—"
         val desc = prefs.getString("w_desc", "—") ?: "—"
-        val iconCode = prefs.getString("w_icon", "na") ?: "na"
 
         val views = RemoteViews(context.packageName, R.layout.weather_quick_widget)
-        views.setTextViewText(R.id.tv_temp_big, "$temp")
-        views.setTextViewText(
-            R.id.tv_metrics,
-            "Hum $hum  •  Wind $wind"
-        )
+        views.setTextViewText(R.id.tv_temp_big, temp)
+        views.setTextViewText(R.id.tv_metrics, "Hum $hum  •  Wind $wind")
         views.setTextViewText(R.id.tv_desc, desc)
-        views.setImageViewResource(R.id.iv_weather_desc, iconRes(iconCode))
 
-        // Background theo nhiệt độ
         val tempValue = temp.replace("°", "").toIntOrNull()
         val bgRes = when {
             tempValue != null && tempValue >= 30 -> R.drawable.weather_widget_bg_hot
@@ -55,27 +72,8 @@ class WeatherQuickWidgetProvider : AppWidgetProvider() {
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
-    private fun iconRes(code: String): Int {
-        return when (code) {
-            "01d" -> R.drawable.ow_01d
-            "01n" -> R.drawable.ow_01n
-            "02d" -> R.drawable.ow_02d
-            "02n" -> R.drawable.ow_02n
-            "03d" -> R.drawable.ow_03d
-            "03n" -> R.drawable.ow_03n
-            "04d" -> R.drawable.ow_04d
-            "04n" -> R.drawable.ow_04n
-            "09d" -> R.drawable.ow_09d
-            "09n" -> R.drawable.ow_09n
-            "10d" -> R.drawable.ow_10d
-            "10n" -> R.drawable.ow_10n
-            "11d" -> R.drawable.ow_11d
-            "11n" -> R.drawable.ow_11n
-            "13d" -> R.drawable.ow_13d
-            "13n" -> R.drawable.ow_13n
-            "50d" -> R.drawable.ow_50d
-            "50n" -> R.drawable.ow_50n
-            else  -> R.drawable.ow_na
-        }
+
+    companion object {
+        private const val WORK_NAME = "weather_widget_worker"
     }
 }
