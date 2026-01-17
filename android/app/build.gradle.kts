@@ -9,6 +9,10 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -24,6 +28,12 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        buildConfigField(
+            "String",
+            "OPEN_WEATHER_API_KEY",
+            "\"${System.getenv("OPENWEATHER_API_KEY") ?: ""}\""
+        )
     }
 
     buildTypes {

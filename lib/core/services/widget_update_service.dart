@@ -22,6 +22,8 @@ class WidgetUpdateService {
     final mo = updated.month.toString().padLeft(2, '0');
     final yy = updated.year.toString();
     final updatedText = '$dd/$mo/$yy $hh:$mm';
+    await HomeWidget.saveWidgetData<String>('w_lat', lat.toString());
+    await HomeWidget.saveWidgetData<String>('w_lon', lon.toString());
     await HomeWidget.saveWidgetData<String>('w_temp', temp);
     await HomeWidget.saveWidgetData<String>('w_hum', hum);
     await HomeWidget.saveWidgetData<String>('w_wind', wind);

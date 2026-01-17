@@ -45,12 +45,11 @@ class _AiAdvisorPageState extends State<AiAdvisorPage> {
 
         final isEn = widget.settings.isEnglish;
         final title = isEn ? "AI advisor" : "Cố vấn AI";
-        final btnText = isEn ? "Generate advice" : "Tạo lời khuyên";
-        final btnLoading = isEn ? "Generating..." : "Đang tạo...";
+        final btnText = isEn ? "Analyze weather condition" : "Phân tích điều kiện thời tiết";
+        final btnLoading = isEn ? "Analyzing..." : "Đang phân tích...";
         final emptyHint = isEn
-            ? "Press Generate advice to get analysis."
-            : "Nhấn Tạo lời khuyên để nhận phân tích.";
-
+            ? "Press Analyze weather condition to get analysis."
+            : "Nhấn Phân tích điều kiện thời tiết để nhận phân tích.";
         return Scaffold(
           body: Container(
             width: double.infinity,

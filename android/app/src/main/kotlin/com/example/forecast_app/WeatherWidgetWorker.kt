@@ -1,6 +1,7 @@
 package com.example.forecast_app
 
 import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.widget.RemoteViews
 import androidx.work.CoroutineWorker
@@ -19,13 +20,14 @@ class WeatherWidgetWorker(
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
             val prefs = applicationContext.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+            val latStr = prefs.getString("w_lat", null)
+            val lonStr = prefs.getString("w_lon", null)
+            val lat = latStr?.toDoubleOrNull()
+            val lon = lonStr?.toDoubleOrNull()
 
-            val lat = if (prefs.contains("w_lat")) prefs.getFloat("w_lat", 0f).toDouble() else null
-            val lon = if (prefs.contains("w_lon")) prefs.getFloat("w_lon", 0f).toDouble() else null
-            val apiKey = prefs.getString("w_ow_key", null)
+            val apiKey = BuildConfig.OPEN_WEATHER_API_KEY
 
-            if (lat == null || lon == null || apiKey.isNullOrBlank()) {
-                // Nếu không có dữ liệu để fetch -> vẫn coi là thành công để WorkManager không retry liên tục
+            if (lat == null || lon == null || apiKey.isBlank()) {
                 return@withContext Result.success()
             }
 
@@ -45,9 +47,7 @@ class WeatherWidgetWorker(
                 .bufferedReader()
                 .use { it.readText() }
 
-            if (code !in 200..299) {
-                return@withContext Result.retry()
-            }
+            if (code !in 200..299) return@withContext Result.retry()
 
             val json = JSONObject(body)
 
@@ -71,7 +71,6 @@ class WeatherWidgetWorker(
             views.setTextViewText(R.id.tv_metrics, "Hum ${hum}%  •  Wind $windText")
             views.setTextViewText(R.id.tv_desc, desc)
 
-            // Background theo nhiệt độ (giữ logic bạn đang dùng)
             val tempValueInt = temp.toInt()
             val bgRes = when {
                 tempValueInt >= 30 -> R.drawable.weather_widget_bg_hot
@@ -81,7 +80,7 @@ class WeatherWidgetWorker(
             views.setInt(R.id.widget_root, "setBackgroundResource", bgRes)
 
             val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
-            val component = android.content.ComponentName(applicationContext, WeatherQuickWidgetProvider::class.java)
+            val component = ComponentName(applicationContext, WeatherQuickWidgetProvider::class.java)
             val ids = appWidgetManager.getAppWidgetIds(component)
             for (id in ids) {
                 appWidgetManager.updateAppWidget(id, views)
